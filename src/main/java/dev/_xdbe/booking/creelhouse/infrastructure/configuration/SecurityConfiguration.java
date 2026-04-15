@@ -27,12 +27,16 @@ public class SecurityConfiguration {
         return http
             .authorizeHttpRequests(auth -> auth
                 // Step 4a: add access control
-                // ...
+                .requestMatchers("/", "/booking", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/dashboard").hasRole("ADMIN")
                 // Step 4a: end
                 .anyRequest().permitAll()
             )
             // Step 4b: Add login form
-            // ...
+            .formLogin(form -> form
+                .defaultSuccessUrl("/dashboard", true)
+                .permitAll()
+            )
             // Step 4b: End of login form configuration
             
             .csrf((csrf) -> csrf
