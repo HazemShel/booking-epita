@@ -46,7 +46,6 @@ jobs:
             --new DependenciesAnalysisAfter.sarif
             --old DependenciesAnalysisBefore.sarif
             --output DependenciesAnalysisDiff.sarif
-        continue-on-error: true
 
       - name: Save differential report as artifact
         uses: actions/upload-artifact@v4
