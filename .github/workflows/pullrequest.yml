@@ -1,0 +1,75 @@
+name: pullrequest
+on:
+  pull_request:
+
+permissions:
+  actions: read
+  security-events: write
+  contents: read
+
+jobs:
+  dependencies-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run osv-scanner after PR
+        uses: google/osv-scanner-action/osv-scanner-action@v1.9.2
+        with:
+          scan-args: |-
+            --format sarif
+            --output DependenciesAnalysisAfter.sarif
+            ./
+        continue-on-error: true
+
+      - name: Checkout baseline commit
+        run: |
+          git checkout ${{ github.event.pull_request.base.sha }}
+
+      - name: Run osv-scanner before PR
+        uses: google/osv-scanner-action/osv-scanner-action@v1.9.2
+        with:
+          scan-args: |-
+            --format sarif
+            --output DependenciesAnalysisBefore.sarif
+            ./
+        continue-on-error: true
+
+      - name: Compare analysis
+        uses: google/osv-scanner-action/osv-reporter-action@v1.9.2
+        with:
+          scan-args: |-
+            --new DependenciesAnalysisAfter.sarif
+            --old DependenciesAnalysisBefore.sarif
+            --output DependenciesAnalysisDiff.sarif
+        continue-on-error: true
+
+      - name: Save differential report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DependenciesAnalysisDiff
+          path: DependenciesAnalysisDiff.sarif
+
+  source-code-analysis:
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep@sha256:7810f1d7884974ab6dda7bef8f4a2c8e165ea2142fd8260515d380e4f1407263
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run differential semgrep analysis
+        run: |
+          semgrep --config .semgrep \
+            --sarif \
+            --output SourceCodeAnalysisDiff.sarif \
+            --baseline-commit ${{ github.event.pull_request.base.sha }} \
+            ./
+        continue-on-error: true
+
+      - name: Save differential report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SourceCodeAnalysisDiff
+          path: SourceCodeAnalysisDiff.sarif
