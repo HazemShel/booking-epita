@@ -14,6 +14,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+        with:                   
+          fetch-depth: 0 
+
       - name: Run osv-scanner after PR
         uses: google/osv-scanner-action/osv-scanner-action@v1.9.2
         with:
@@ -40,10 +43,12 @@ jobs:
         uses: google/osv-scanner-action/osv-reporter-action@v1.9.2
         with:
           scan-args: |-
-            --new DependenciesAnalysisAfter.sarif
-            --old DependenciesAnalysisBefore.sarif
-            --output DependenciesAnalysisDiff.sarif
-        continue-on-error: true
+            --new
+            DependenciesAnalysisAfter.sarif
+            --old
+            DependenciesAnalysisBefore.sarif
+            --output
+            DependenciesAnalysisDiff.sarif
 
       - name: Save differential report as artifact
         uses: actions/upload-artifact@v4
@@ -58,6 +63,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+        with:                   
+          fetch-depth: 0 
 
       - name: Run differential semgrep analysis
         run: |
